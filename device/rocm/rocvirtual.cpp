@@ -859,7 +859,7 @@ void VirtualGPU::ResetQueueStates() {
 
   if (dev().settings().barrier_sync_) {
     // Release the pool, since runtime just completed a barrier
-    // @note: Runtime can reset kernel arg pool only if the barrier with L2 invalidation was issued
+    // @note: Runtime can reset kernel arg pool only if the barrier with L2 invalidation was issued!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     resetKernArgPool();
   }
 }
@@ -1051,8 +1051,10 @@ bool VirtualGPU::create() {
 // ================================================================================================
 bool VirtualGPU::initPool(size_t kernarg_pool_size) {
   kernarg_pool_size_ = kernarg_pool_size;
-  kernarg_pool_base_ = reinterpret_cast<char*>(roc_device_.hostAlloc(kernarg_pool_size_, 0,
-                                               Device::MemorySegment::kKernArg));
+  // kernarg_pool_base_ = reinterpret_cast<char*>(roc_device_.hostAlloc(kernarg_pool_size_, 0,
+  //                                              Device::MemorySegment::kKernArg));
+  kernarg_pool_base_ = reinterpret_cast<char*>(roc_device_.svmAlloc(roc_device_.context(), kernarg_pool_size_, 0, 0)); // CL_MEM_SVM_ATOMICS
+  // kernarg_pool_base_ = reinterpret_cast<char*>(amd::SvmBuffer::malloc(roc_device_.context(), CL_MEM_SVM_ATOMICS, kernarg_pool_size_));
   if (kernarg_pool_base_ == nullptr) {
     return false;
   }
@@ -1061,9 +1063,9 @@ bool VirtualGPU::initPool(size_t kernarg_pool_size) {
 
 // ================================================================================================
 void VirtualGPU::destroyPool() {
-  if (kernarg_pool_base_ != nullptr) {
-    roc_device_.hostFree(kernarg_pool_base_, kernarg_pool_size_);
-  }
+  // if (kernarg_pool_base_ != nullptr) {
+  //   roc_device_.hostFree(kernarg_pool_base_, kernarg_pool_size_);
+  // }
 }
 
 // ================================================================================================
