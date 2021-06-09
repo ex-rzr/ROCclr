@@ -23,6 +23,7 @@
 #include "os/os.hpp"
 #include "thread/thread.hpp"
 #include "utils/util.hpp"
+#include "utils/flags.hpp"
 
 #include <iostream>
 #include <stdarg.h>
@@ -371,8 +372,15 @@ const void* Os::createOsThread(amd::Thread* thread) {
   cpu_set_t cpuset;
   if (processorCount_ > 0) {
     CPU_ZERO(&cpuset);
-    for (int i = 0; i < processorCount_; i++) {
-      CPU_SET(i, &cpuset);
+    if (EXP_SET_CPU_START == -1) {
+      for (int i = 0; i < processorCount_; i++) {
+        CPU_SET(i, &cpuset);
+      }
+    } else {
+      static int currentCPU = EXP_SET_CPU_START;
+      printf("thread on CPU %d\n", currentCPU);
+      CPU_SET(currentCPU, &cpuset);
+      currentCPU++;
     }
     if (0 != pthread_attr_setaffinity_np(&threadAttr, sizeof(cpu_set_t), &cpuset)) {
       fatal("pthread_attr_setaffinity_np failed to set affinity");

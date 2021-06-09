@@ -190,6 +190,7 @@ void Device::setupCpuAgent() {
       }
     }
   }
+  printf("CPU agent %u\n", index);
 
   cpu_agent_ = cpu_agents_[index].agent;
   system_segment_ = cpu_agents_[index].fine_grain_pool;

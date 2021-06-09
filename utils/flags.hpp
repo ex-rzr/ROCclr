@@ -260,7 +260,9 @@ release(cstring, ROC_GLOBAL_CU_MASK, "",                                      \
         "Sets a global CU mask (entered as hex value) for all queues,"        \
         "Each active bit represents using one CU (e.g., 0xf enables only 4 CUs)") \
 release(cstring, AMD_LOG_LEVEL_FILE, "",                                       \
-        "Set output file for AMD_LOG_LEVEL, Default is stderr")
+        "Set output file for AMD_LOG_LEVEL, Default is stderr")               \
+release(int, EXP_SET_CPU_START, -1,                                           \
+        "-1 - all CPUs (original)")
 
 namespace amd {
 
