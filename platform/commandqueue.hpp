@@ -31,6 +31,7 @@
 #include "thread/thread.hpp"
 #include "platform/object.hpp"
 #include "platform/command.hpp"
+#include "../atomic_queue/atomic_queue.h"
 /*! \brief Holds commands that will be executed on a specific device.
  *
  *  \details A command queue is created on a specific device in
@@ -110,9 +111,6 @@ class CommandQueue : public RuntimeObject {
 
   //! Returns the CU mask array
   const std::vector<uint32_t>& cuMask() const { return cuMask_; }
-
-  //! Returns the queue lock
-  Monitor& lock() { return queueLock_; }
 
  protected:
   //! CommandQueue constructor is protected
@@ -195,7 +193,8 @@ class HostQueue : public CommandQueue {
   } thread_;  //!< The command queue thread instance.
 
  private:
-  ConcurrentLinkedQueue<Command*> queue_;  //!< The queue.
+  // TODO use a version with runtime size (passed to ctor)
+  atomic_queue::AtomicQueue<Command*, 1024> queue_;  //!< The queue.
 
   Command* lastEnqueueCommand_;  //!< The last submitted command
 
@@ -226,8 +225,8 @@ class HostQueue : public CommandQueue {
 
   //! Signal to start processing the commands in the queue.
   void flush() {
-    ScopedLock sl(queueLock_);
-    queueLock_.notify();
+    // ScopedLock sl(queueLock_);
+    // queueLock_.notify();
   }
 
   //! Finish all queued commands

@@ -23,6 +23,8 @@
 #include "device/device.hpp"
 #include "platform/context.hpp"
 
+#include "../atomic_queue/atomic_queue.h"
+
 /*!
  * \file commandQueue.cpp
  * \brief  Definitions for HostQueue object.
@@ -60,26 +62,15 @@ bool HostQueue::terminate() {
       Command* marker = nullptr;
 
       // Send a finish if the queue is still accepting commands.
-      {
-        ScopedLock sl(queueLock_);
-        if (thread_.acceptingCommands_) {
-          marker = new Marker(*this, false);
-          if (marker != nullptr) {
-            append(*marker);
-            queueLock_.notify();
-          }
+      if (thread_.acceptingCommands_) {
+        marker = new Marker(*this, false);
+        if (marker != nullptr) {
+          append(*marker);
+          marker->awaitCompletion();
+          marker->release();
+          thread_.acceptingCommands_ = false;
+          queue_.push(nullptr);
         }
-      }
-      if (marker != nullptr) {
-        marker->awaitCompletion();
-        marker->release();
-      }
-
-      // Wake-up the command loop, so it can exit
-      {
-        ScopedLock sl(queueLock_);
-        thread_.acceptingCommands_ = false;
-        queueLock_.notify();
       }
 
       // FIXME_lmoriche: fix termination handshake
@@ -131,15 +122,9 @@ void HostQueue::loop(device::VirtualDevice* virtualDevice) {
   Command* tail = NULL;
   while (true) {
     // Get one command from the queue
-    Command* command = queue_.dequeue();
-    if (command == NULL) {
-      ScopedLock sl(queueLock_);
-      while ((command = queue_.dequeue()) == NULL) {
-        if (!thread_.acceptingCommands_) {
-          return;
-        }
-        queueLock_.wait();
-      }
+    Command* command = queue_.pop();
+    if (command == nullptr) {
+      return;
     }
 
     command->retain();
@@ -196,7 +181,7 @@ void HostQueue::append(Command& command) {
   }
   command.retain();
   command.setStatus(CL_QUEUED);
-  queue_.enqueue(&command);
+  queue_.push(&command);
   if (!IS_HIP) {
     return;
   }
@@ -220,7 +205,7 @@ void HostQueue::append(Command& command) {
 
 bool HostQueue::isEmpty() {
   // Get a snapshot of queue size
-  return queue_.empty();
+  return queue_.was_empty();
 }
 
 Command* HostQueue::getLastQueuedCommand(bool retain) {
