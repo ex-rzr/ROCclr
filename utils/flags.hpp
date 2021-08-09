@@ -257,7 +257,11 @@ release(cstring, ROC_GLOBAL_CU_MASK, "",                                      \
 release(cstring, AMD_LOG_LEVEL_FILE, "",                                       \
         "Set output file for AMD_LOG_LEVEL, Default is stderr")                \
 release(size_t, PAL_PREPINNED_MEMORY_SIZE, 64,                                 \
-        "Size in KBytes of prepinned memory")
+        "Size in KBytes of prepinned memory")                                  \
+release(int, EXP_SET_CPU_START, -1,                                            \
+        "-1 - all CPUs (original)")                                            \
+release(int, EXP_SET_CPU_END, -1,                                              \
+        "-1 and EXP_SET_CPU_START >= 0 - sequentially from START")
 
 namespace amd {
 
